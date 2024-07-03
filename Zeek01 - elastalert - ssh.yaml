@@ -1,0 +1,77 @@
+doc_type: "_doc"
+
+# Elasticsearch host
+es_host: localhost
+
+# Elasticsearch port
+es_port: 9200
+
+# Rule name, must be unique
+name: Big Data Security and Visualization - SSH
+
+# Alert on x events in y seconds
+type: frequency
+
+# Alert when this many documents matching the query occur within a timeframe
+num_events: 3
+
+# num_events must occur within this amount of time to trigger an alert
+timeframe:
+  minutes: 10
+
+# A list of elasticsearch filters used for find events
+# These filters are joined with AND and nested in a filtered query
+# For more info: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html
+filter:
+- term:
+    event.outcome: "failure"
+- term:
+    event.action: "ssh_login"
+
+index: filebeat-*
+
+# When the attacker continues, send a new alert after x minutes
+realert:
+  minutes: 1
+
+query_key:
+  - source.ip
+
+include:
+  - "@timestamp"
+  - host.hostname
+  - user.name
+  - source.ip
+
+include_match_in_root: true
+
+alert_subject: "SSH failed authentication on <{}> | <{}|Show Dashboard>"
+alert_subject_args:
+  - host.hostname
+  - kibana_link
+
+
+alert_text: |-
+  A faile authentication was detected on {}.
+  The attacker looks like:
+  User: {}
+  IP: {}
+alert_text_args:
+  - host.hostname
+  - user.name
+  - source.ip
+
+# The alert is use when a match is found
+alert:
+  - "slack"
+
+slack_webhook_url: "https://hooks.slack.com/services/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"
+slack_username_override: "Dr. Claw hacked you!!!"
+
+# Example of attaching a link to Kibana for further investigation (optional)
+kibana_url: "http://kibana.example.com"
+alert_text: "SSH login failure detected at {0}. Please check Kibana for more details: {1}"
+alert_text_args:
+  - "@timestamp"
+  - "http://kibana.example.com/app/kibana#/discover?_g=(time:(from:now-1h,to:now))&_a=(index:'logstash-*',query:(query_string:(query:'event.outcome:failure AND event.action:ssh>
+

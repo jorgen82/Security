@@ -1,0 +1,81 @@
+#sudo nano /etc/elastalert/rules/example.yaml
+ 
+# Alert when the rate of events exceeds a threshold
+
+# (Optional)
+# Elasticsearch host
+es_host: localhost
+
+# (Optional)
+# Elasticsearch port
+es_port: 9200
+
+doc_type: "_doc"
+# (OptionaL) Connect with SSL to Elasticsearch
+#use_ssl: True
+
+# (Optional) basic-auth username and password for Elasticsearch
+#es_username: someusername
+#es_password: somepassword
+
+# (Required)
+# Rule name, must be unique
+name: Big Data Security and Visualization
+
+# (Required)
+# Type of alert.
+# the frequency rule type alerts when num_events events occur with timeframe time
+type: frequency
+
+# (Required)
+# Index to search, wildcard supported
+index: filebeat-*
+
+# (Required, frequency specific)
+# Alert when this many documents matching the query occur within a timeframe
+num_events: 2
+
+# (Required, frequency specific)
+# num_events must occur within this amount of time to trigger an alert
+timeframe:
+  hours: 1
+
+# (Required)
+# A list of Elasticsearch filters used for find events
+# These filters are joined with AND and nested in a filtered query
+# For more info: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html
+filter:
+- term:
+    event.outcome: "failure"
+- term:
+    event.action: "ssh_login"
+#- query:
+#    query_string:
+#      query: "event.outcome:failure"
+#- term:
+#    status: "*"
+#- term:
+#    source.as.organization.name: "Dr. Claw Corp."
+
+# (Required)
+# The alert is use when a match is found
+alert:
+- "slack"
+
+# (required, email specific)
+# a list of email addresses to send alerts to
+slack_webhook_url: "https://hooks.slack.com/services/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"
+slack_title: "Dr. Claw hacked you!!!"
+
+# Additional example to include specific fields in the alert message (optional)
+include:
+  - "@timestamp"
+  - "host"
+  - "message"
+
+# Example of attaching a link to Kibana for further investigation (optional)
+kibana_url: "http://kibana.example.com"
+alert_text: "SSH login failure detected at {0}. Please check Kibana for more details: {1}"
+alert_text_args:
+  - "@timestamp"
+  - "http://kibana.example.com/app/kibana#/discover?_g=(time:(from:now-1h,to:now))&_a=(index:'logstash-*',query:(query_string:(query:'event.outcome:failure AND event.action:ssh_login')))"
